@@ -1,0 +1,144 @@
+<div class="page">
+  <h1>Work Order Generator</h1>
+
+  <mat-card class="card">
+    <h2>New Work Order</h2>
+    <div class="grid">
+      <mat-form-field>
+        <mat-label>Packaging Type</mat-label>
+        <mat-select [(ngModel)]="model.packagingType" required>
+          <mat-option *ngFor="let p of packagingTypes" [value]="p">{{p}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Province</mat-label>
+        <mat-select [(ngModel)]="model.province" required>
+          <mat-option *ngFor="let p of provinces" [value]="p">{{p}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Health Canada Category</mat-label>
+        <mat-select [(ngModel)]="model.hcCategory" required>
+          <mat-option *ngFor="let c of hcCategories" [value]="c">{{c}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Product</mat-label>
+        <mat-select [(ngModel)]="model.product" required>
+          <mat-option *ngFor="let p of products" [value]="p">{{p}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Lot #</mat-label>
+        <input matInput [(ngModel)]="model.lot" required placeholder="e.g. L240731-01">
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Quantity (units)</mat-label>
+        <input matInput type="number" [(ngModel)]="model.quantity" required min="1">
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Requested By</mat-label>
+        <input matInput [(ngModel)]="model.requestedBy" required>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Date</mat-label>
+        <input matInput type="date" [(ngModel)]="model.dateISO" required>
+      </mat-form-field>
+
+      <mat-form-field class="col-span">
+        <mat-label>Comments</mat-label>
+        <textarea matInput rows="2" [(ngModel)]="model.comments" placeholder="Special instructions, label notes, etc."></textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button mat-raised-button color="primary" [disabled]="!valid" (click)="submit()">Create Work Order</button>
+    </div>
+  </mat-card>
+
+  <mat-card class="card">
+    <h2>Saved Work Orders</h2>
+    <table mat-table [dataSource]="store.orders()" class="mat-elevation-z1">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>WO#</th>
+        <td mat-cell *matCellDef="let o">{{o.id}}</td>
+      </ng-container>
+      <ng-container matColumnDef="product">
+        <th mat-header-cell *matHeaderCellDef>Product</th>
+        <td mat-cell *matCellDef="let o">{{o.product}}</td>
+      </ng-container>
+      <ng-container matColumnDef="lot">
+        <th mat-header-cell *matHeaderCellDef>Lot</th>
+        <td mat-cell *matCellDef="let o">{{o.lot}}</td>
+      </ng-container>
+      <ng-container matColumnDef="qty">
+        <th mat-header-cell *matHeaderCellDef>Qty</th>
+        <td mat-cell *matCellDef="let o">{{o.quantity}}</td>
+      </ng-container>
+      <ng-container matColumnDef="pkg">
+        <th mat-header-cell *matHeaderCellDef>Packaging</th>
+        <td mat-cell *matCellDef="let o">{{o.packagingType}}</td>
+      </ng-container>
+      <ng-container matColumnDef="prov">
+        <th mat-header-cell *matHeaderCellDef>Prov</th>
+        <td mat-cell *matCellDef="let o">{{o.province}}</td>
+      </ng-container>
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let o">{{o.dateISO}}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let o">
+          <button mat-button (click)="preview(o)">Preview/Print</button>
+          <button mat-button color="warn" (click)="remove(o.id)">Delete</button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </mat-card>
+
+  <div class="print-panel" *ngIf="selected() as s">
+    <div class="print-card">
+      <header>
+        <h2>Work Order</h2>
+        <div>WO#: <b>{{s.id}}</b></div>
+      </header>
+
+      <section class="kv">
+        <div><label>Product</label><span>{{s.product}}</span></div>
+        <div><label>Lot #</label><span>{{s.lot}}</span></div>
+        <div><label>Quantity</label><span>{{s.quantity}}</span></div>
+        <div><label>Packaging</label><span>{{s.packagingType}}</span></div>
+        <div><label>Province</label><span>{{s.province}}</span></div>
+        <div><label>HC Category</label><span>{{s.hcCategory}}</span></div>
+        <div><label>Requested By</label><span>{{s.requestedBy}}</span></div>
+        <div><label>Date</label><span>{{s.dateISO}}</span></div>
+      </section>
+
+      <section>
+        <label>Comments</label>
+        <div class="box">{{s.comments || '—'}}</div>
+      </section>
+
+      <section class="sign">
+        <div><label>Inventory Check</label><div class="line"></div></div>
+        <div><label>Initials</label><div class="line"></div></div>
+      </section>
+
+      <div class="preview-actions no-print">
+        <button mat-stroked-button (click)="closePreview()">Close</button>
+        <button mat-raised-button color="primary" (click)="print()">Print</button>
+      </div>
+    </div>
+  </div>
+</div>
